@@ -8,6 +8,7 @@ On the AWS side:
 - A bastion host, basic and elligible for for the AWS free tiers
 - An internet gateway
 - An MSK cluster
+
 On the Confluent Cloud side:
 - A environment in your organizatiion
 - A network with a peering request to the VPC created above
