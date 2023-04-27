@@ -17,6 +17,8 @@ On the Confluent Cloud side:
 
 In order to make it look like what I can see from the field, both Kafka clusters are created to use only private networking, but to make it possible, this scenario supports only VPC peering between Confluent Cloud and the AWS VPC.
 
+![Architecture](img/architecture.png)
+
 In order to set all of that up in an automated manner, it's using Terraform with the [Terraform provider for Confluent Cloud](https://registry.terraform.io/providers/confluentinc/confluent/latest/docs). 
 
 ## Prerequisites
