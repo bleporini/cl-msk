@@ -62,7 +62,6 @@ resource "confluent_service_account" "app-manager" {
 
 }
 
-
 resource "confluent_role_binding" "app-manager-env-admin" {
   principal   = "User:${confluent_service_account.app-manager.id}"
   role_name   = "EnvironmentAdmin"
@@ -89,3 +88,29 @@ resource "confluent_api_key" "app-manager-kafka-api-key" {
     }
   }
 }
+
+data "confluent_organization" "org" {}
+
+
+resource "confluent_service_account" "prometheus" {
+  display_name = "prometheus"
+  description  = "Service account to export metrics"
+}
+
+resource "confluent_role_binding" "metrics-rb" {
+  principal   = "User:${confluent_service_account.prometheus.id}"
+  role_name   = "MetricsViewer"
+  crn_pattern = data.confluent_organization.org.resource_name
+}
+
+resource "confluent_api_key" "prometheus-cloud-api-key" {
+  display_name = "prometheus-cloud-api-key"
+  description  = "Cloud API Key that is owned by 'prometheus' service account"
+  owner {
+    id          = confluent_service_account.prometheus.id
+    api_version = confluent_service_account.prometheus.api_version
+    kind        = confluent_service_account.prometheus.kind
+  }
+
+}
+

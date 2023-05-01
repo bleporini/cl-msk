@@ -20,6 +20,7 @@ resource "local_file" "msk_config" {
   content=<<EOF
 bootstrap.servers=${aws_msk_cluster.msk.bootstrap_brokers}
 security.protocol=PLAINTEXT
+consumer.offset.sync.enable=true
 EOF
 
   filename="source-msk.properties"
@@ -48,12 +49,39 @@ acks=all
 resource "local_file" "create_link"{
   content=<<EOF
 #!/usr/bin/env bash
+scp prometheus.yml ec2-user@${aws_instance.bastion.public_ip}:~/ 
+ssh ec2-user@${aws_instance.bastion.public_ip} 'docker run -d -p 9090:9090 --name prometheus -v $PWD/prometheus.yml:/opt/bitnami/prometheus/conf/prometheus.yml bitnami/prometheus:latest'
 scp ccloud.properties ec2-user@${aws_instance.bastion.public_ip}:~/
 scp source-msk.properties ec2-user@${aws_instance.bastion.public_ip}:~/
-ssh ec2-user@${aws_instance.bastion.public_ip} 'docker run -v $PWD:/work --workdir /work --rm confluentinc/cp-server:7.3.0 kafka-cluster-links --bootstrap-server=${replace(confluent_kafka_cluster.dedicated.bootstrap_endpoint, "SASL_SSL://", "")} --command-config ccloud.properties --config-file source-msk.properties --create --link msk_lnk'
+scp link_group_filters.json ec2-user@${aws_instance.bastion.public_ip}:~/
+ssh ec2-user@${aws_instance.bastion.public_ip} 'docker run -v $PWD:/work --workdir /work --rm confluentinc/cp-server:7.3.0 kafka-cluster-links --bootstrap-server=${replace(confluent_kafka_cluster.dedicated.bootstrap_endpoint, "SASL_SSL://", "")} --command-config ccloud.properties --config-file source-msk.properties --create --link msk_lnk --consumer-group-filters-json-file link_group_filters.json'
 ssh ec2-user@${aws_instance.bastion.public_ip} 'docker run -v $PWD:/work --workdir /work --rm confluentinc/cp-server:7.3.0 kafka-mirrors --bootstrap-server ${replace(confluent_kafka_cluster.dedicated.bootstrap_endpoint, "SASL_SSL://", "")} --create --mirror-topic test --link msk_lnk --command-config ccloud.properties'
+echo You can check out Prometheus on http://${aws_instance.bastion.public_ip}:9090
   EOF
 
   filename= "create_link.sh"
 
+}
+
+resource "local_file" "p8s_cfg"{
+  content=<<EOF
+scrape_configs:
+  - job_name: Confluent Cloud
+    scrape_interval: 1m
+    scrape_timeout: 1m
+    honor_timestamps: true
+    static_configs:
+      - targets:
+        - api.telemetry.confluent.cloud
+    scheme: https
+    basic_auth:
+      username: ${confluent_api_key.prometheus-cloud-api-key.id}
+      password: ${confluent_api_key.prometheus-cloud-api-key.secret}
+    metrics_path: /v2/metrics/cloud/export
+    params:
+      "resource.kafka.id":
+        - ${confluent_kafka_cluster.dedicated.id}
+  EOF
+
+  filename="prometheus.yml"
 }

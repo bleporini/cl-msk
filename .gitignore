@@ -183,3 +183,5 @@ tags
 bastion.sh
 ccloud.properties
 create_link.sh
+source-msk.properties
+prometheus.yml

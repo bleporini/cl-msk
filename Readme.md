@@ -67,6 +67,7 @@ The outcome of this is a couple of files that will be utilized afterwards:
 - `ccloud.properties` that contains all parameters to the newly created Confluent Cloud cluster
 - `source-msk.properties` wich has the parameters to connect to the MSK cluster
 - `bastion.sh` is a utility script to easily connect to the bastion host
+- `prometheus.yml`: generated configuration to run Prometheus on the bastion host
 - `create_link.sh` uploads the properties file to the bastion, and run remote command in order to create the link and the mirror for the source topic. **Note: As we're using VPC peering, the Cluster Link commands requires to be run from the VPC peered with the Confluent Cloud VPC, this is why this script uses remote commands.**
 
 *It can happen that the excutions fails with the message below, in that case, just run it again, Terraform will synchronize all resources, that's why it's cool!*
@@ -82,7 +83,7 @@ The outcome of this is a couple of files that will be utilized afterwards:
 
 ### Check it
 
-The bastion host is created with a startup script that installs some dependencies and more importantly that creates a topic and starts a `kafka-producer-perf-test` to generate traffic on the MSK cluster, but it can take some time (~1 minute more or less) to download everything, so check that the performance test is running properly:
+The bastion host is created with a startup script that installs some dependencies and more importantly that creates a topic, starts a `kafka-producer-perf-test` and a `kafka-consumer-perf-test` to generate traffic on the MSK cluster, but it can take some time (~1 minute more or less) to download everything, so check that the performance test is running properly:
 
 ```bash
 $ ./bastion.sh
@@ -96,8 +97,9 @@ https://aws.amazon.com/amazon-linux-2/
 1 package(s) needed for security, out of 1 available
 Run "sudo yum update" to apply all updates.
 [ec2-user@ip-10-0-9-4 ~]$ docker ps
-CONTAINER ID   IMAGE                   COMMAND                  CREATED              STATUS              PORTS      NAMES
-d705e8613ddb   confluentinc/cp-kafka   "kafka-producer-perf…"   About a minute ago   Up About a minute   9092/tcp   nice_meninsky
+CONTAINER ID   IMAGE                       COMMAND                  CREATED       STATUS       PORTS                                       NAMES
+9a4ae92abfb4   confluentinc/cp-kafka       "kafka-consumer-perf…"   2 hours ago   Up 2 hours   9092/tcp                                    consumer
+56fc32d30638   confluentinc/cp-kafka       "kafka-producer-perf…"   2 hours ago   Up 2 hours   9092/tcp                                    producer
 [ec2-user@ip-10-0-9-4 ~]$ docker logs d705e8613ddb
 4999 records sent, 999.6 records/sec (0.95 MB/sec), 24.1 ms avg latency, 542.0 ms max latency.
 5001 records sent, 1000.2 records/sec (0.95 MB/sec), 5.6 ms avg latency, 49.0 ms max latency.
@@ -134,6 +136,7 @@ Status: Downloaded newer image for confluentinc/cp-server:7.3.0
 Cluster link 'msk_lnk' creation successfully completed.
 [2023-04-18 14:52:01,597] WARN These configurations '[acks, session.timeout.ms]' were supplied but are not used yet. (org.apache.kafka.clients.admin.AdminClientConfig)
 Created topic test.
+You can check out Prometheus on http://3.28.45.3:9090
 $
 ```
 
@@ -150,6 +153,11 @@ Processed a total of 776 messages
 
 Hit `CTRL-C` after a few seconds otherwise your terminal will be flooded, but it shows that the link is actually mirroring the content of the source topic. 
 
+As the link creation script also starts a Prometheus to collect metrics, you can explore the metrics and check the traffic on the link among other things by browsing on `http://<bastion host IP>:9090`:
+
+![Prometheus](img/p8s.jpg)
+
+As the metrics are collected every 60s and the producing application is sending dummy records at a 1MB/s pace, the data points above round 60MB are consistent.
 
 ### Dispose everything
 

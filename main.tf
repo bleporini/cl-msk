@@ -75,6 +75,19 @@ resource "aws_security_group" "allow_ssh" {
   }
 }
 
+resource "aws_security_group" "allow_p8s" {
+  name = "allow_p8s"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 9090
+    to_port = 9090
+    protocol = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+
+  }
+}
+
 resource "aws_security_group" "allow_ccloud" {
   name = "allow_cloud"
   vpc_id = aws_vpc.main.id
@@ -96,6 +109,7 @@ resource "aws_instance" "bastion" {
 
   security_groups = [
     aws_security_group.allow_ssh.id,
+    aws_security_group.allow_p8s.id,
     aws_vpc.main.default_security_group_id
   ]
   key_name = "pub_${random_id.id.id}"
@@ -107,8 +121,9 @@ sudo yum install -y docker
 sudo systemctl start docker
 sudo usermod -a -G docker ec2-user
 
-docker run  confluentinc/cp-kafka kafka-topics --bootstrap-server ${aws_msk_cluster.msk.bootstrap_brokers} --create --topic test >> start.log
-docker run -d confluentinc/cp-kafka kafka-producer-perf-test --producer-props bootstrap.servers=${aws_msk_cluster.msk.bootstrap_brokers} --num-records 100000000 --record-size 1000 --throughput 1000 --topic test  >> start.log
+docker run  confluentinc/cp-kafka kafka-topics --bootstrap-server ${aws_msk_cluster.msk.bootstrap_brokers} --create --topic test 
+docker run -d --name producer confluentinc/cp-kafka kafka-producer-perf-test --producer-props bootstrap.servers=${aws_msk_cluster.msk.bootstrap_brokers} --num-records 100000000 --record-size 1000 --throughput 1000 --topic test  
+docker run -d --name consumer confluentinc/cp-kafka kafka-consumer-perf-test --bootstrap-server ${aws_msk_cluster.msk.bootstrap_brokers} --messages 100000000 --topic test --group client1 
 
 EOF
 
