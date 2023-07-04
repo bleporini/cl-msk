@@ -79,7 +79,7 @@ The outcome of this is a couple of files that will be utilized afterwards:
 │
 │ This is a bug in the provider, which should be reported in the provider's own issue tracker.
 ```
-*If it's not a bug in the provider and you knwo why it happens, a PR is more than welcome!*.
+*If it's not a bug in the provider and you know why it happens, a PR is more than welcome!*.
 
 ### Check it
 
@@ -143,7 +143,7 @@ $
 Then to verify that the link is effective, you can consume the `test` topic from the Confluent Cloud cluster:
 ```bash 
 $ ./bastion.sh
-[ec2-user@ip-10-0-9-4 ~]$ docker run -ti --rm -v $PWD:/work confluentinc/cp-server:7.3.0 kafka-console-consumer --bootstrap-server <Confluent Cloud cluster> --consumer.config /work/ccloud.properties --topic test 
+[ec2-user@ip-10-0-9-4 ~]$ docker run -ti --rm -v $PWD:/work confluentinc/cp-server:7.3.0 kafka-console-consumer --bootstrap-server <Confluent Cloud cluster> --consumer.config /work/ccloud.properties --topic test --max-messages 100
 [2023-04-18 14:53:23,439] WARN These configurations '[acks]' were supplied but are not used yet. (org.apache.kafka.clients.consumer.ConsumerConfig)
 YCIOTCECWIOGNEXWMCUFIYGYNWDTOEWBMPMOAQMSYXXYPMAPDBSZGBKWIJRKMLCOJLSBQQJYOEJNWDMMQUQGPKANUGNGLMTDZGQJBWZITDQGUCIEDFWHCIRIVNJSPSGXSGOQNAHKKBLTGNVDMGOVGRKNPBFVHMHGHUCFPSDLRQFKPDCECILZOWDZHGRQWKNCTYIFATNXQSEDPPKNGBOPYWLCWFZAUNSZUKESAZJEYQQDARILCZDYYLZOOIRZACTZMPAMFEXKVWTPZMJKXLJPRGSTJHLGFXYHUDLNXVYNJCXPFLKPPVZSOCQBCFLENNFRIYIUSPOBNPFXWMSNWPPONVKLXXRSCVRFMLTGCYRPGTAGJQGSRWGLMZIFUWWVNPMTPGDTKJYDMMQYLUNGUQGLSVFZDZMBJIYBUTGNBPARFEEYSUNMSLEGUVYDSBOHSHCHJYWPBJFUUUJVSPHHPKYYMUMLXRUBXQFIGSVTAOSJWUJTAEUDTZJMBOWIQTKNSIVGQFZGZSZSASTDJPZXBSNIUBLIBDXJLIGBKHFJFKYKDVTGLROFWAOLHCEXOOZXCMBTPPTGVOAXEFTNCVAYAXOGZQLVDZOGXPSYSHSANHKRJTDPBURIDVXQOLNASQEYQOHFSTZKPAPPYBCZHGOWAFBCQMIRMOEKHYJWXKCRYHOZBNSCLWOVLDOSJWFKBUJRCRELNAEALFQQIJUONLWTHDIVVDEMPZPANILCFNZAWPUXJVWUNHPMQPSYIAUOJZSPHOUFOADEUGPVIAODSLMZGMMANEZJWSEVKBKBFBIUBCSXQURYZUWUIOBKRCFUEQPQTAXANOSLNSEZZMVONAXNHRROGLLTHCOCRYKXRLOQOJSUTKXVMSGOHGOBEJTTVYKLMAIZJRKRYBOMTCLESBBZGPDTHAVIPWLCWAYXTNFVBZRFAVHMHTRERWAWVPOYOLSFOSLBECAIMCTXEHLPGJWVUSTKIZXMUPZAVHMMHGLCYGVR
 [...]
@@ -151,7 +151,7 @@ Processed a total of 776 messages
 [ec2-user@ip-10-0-9-4 ~]$
 ```
 
-Hit `CTRL-C` after a few seconds otherwise your terminal will be flooded, but it shows that the link is actually mirroring the content of the source topic. 
+Consuming 100 messages (`--max-messages 100`) from the topic shows that the link is actually mirroring the content of the source topic. 
 
 As the link creation script also starts a Prometheus to collect metrics, you can explore the metrics and check the traffic on the link among other things by browsing on `http://<bastion host IP>:9090`:
 
